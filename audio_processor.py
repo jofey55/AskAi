@@ -1,5 +1,4 @@
 import numpy as np
-import sounddevice as sd
 import whisper
 import tempfile
 import os
@@ -8,6 +7,15 @@ import wave
 import threading
 import queue
 from typing import Optional
+
+# Try to import sounddevice, fall back gracefully if not available
+try:
+    import sounddevice as sd
+    AUDIO_AVAILABLE = True
+except (ImportError, OSError) as e:
+    print(f"Audio input not available: {e}")
+    AUDIO_AVAILABLE = False
+    sd = None
 
 class AudioProcessor:
     """Handles audio recording and transcription using Whisper"""
@@ -33,6 +41,9 @@ class AudioProcessor:
         
     def start_recording(self):
         """Start audio recording in a separate thread"""
+        if not AUDIO_AVAILABLE:
+            raise Exception("Audio recording not available in this environment. Please use manual text input instead.")
+        
         if not self.recording:
             self.recording = True
             self.recording_thread = threading.Thread(target=self._record_audio)
@@ -49,6 +60,9 @@ class AudioProcessor:
     
     def _record_audio(self):
         """Record audio in chunks"""
+        if not AUDIO_AVAILABLE:
+            return
+            
         try:
             def audio_callback(indata, frames, time, status):
                 if status:
@@ -123,6 +137,10 @@ class AudioProcessor:
     
     def list_audio_devices(self):
         """List available audio input devices"""
+        if not AUDIO_AVAILABLE:
+            logging.info("Audio devices not available in this environment")
+            return
+            
         try:
             devices = sd.query_devices()
             logging.info("Available audio devices:")

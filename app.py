@@ -2,7 +2,14 @@ import os
 import logging
 from flask import Flask, render_template, request, jsonify
 from flask_socketio import SocketIO, emit
-from audio_processor import AudioProcessor
+# Import audio processor with fallback
+try:
+    from audio_processor import AudioProcessor
+    AUDIO_AVAILABLE = True
+except Exception as e:
+    print(f"Audio processing not available: {e}")
+    AUDIO_AVAILABLE = False
+    AudioProcessor = None
 from openai_client import OpenAIClient
 import threading
 import time
@@ -17,7 +24,10 @@ app.secret_key = os.environ.get("SESSION_SECRET", "interview_assistant_secret_ke
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 # Initialize processors
-audio_processor = AudioProcessor()
+if AUDIO_AVAILABLE:
+    audio_processor = AudioProcessor()
+else:
+    audio_processor = None
 openai_client = OpenAIClient()
 
 # Global state
@@ -36,6 +46,12 @@ def start_transcription():
     global transcription_active, transcription_thread
     
     try:
+        if not AUDIO_AVAILABLE:
+            return jsonify({
+                'success': False,
+                'message': 'Audio recording not available in this environment. Please use manual text input.'
+            }), 400
+            
         if not transcription_active:
             transcription_active = True
             transcription_thread = threading.Thread(target=transcription_worker)
@@ -70,7 +86,8 @@ def stop_transcription():
     
     try:
         transcription_active = False
-        audio_processor.stop_recording()
+        if audio_processor:
+            audio_processor.stop_recording()
         
         socketio.emit('status_update', {
             'status': 'stopped',
