@@ -1,10 +1,12 @@
 class InterviewAssistant {
     constructor() {
         this.answerCount = 0;
-        this.mediaRecorder = null;
-        this.audioChunks = [];
+        this.recognition = null;
+        this.isListening = false;
+        this.transcript = '';
         
         this.initializeElements();
+        this.initializeSpeechRecognition();
         this.bindEvents();
     }
     
@@ -14,11 +16,11 @@ class InterviewAssistant {
         this.clearAnswersBtn = document.getElementById('clear-answers-btn');
         this.clearQuestionBtn = document.getElementById('clear-question-btn');
         
-        // Audio recording elements
-        this.startRecordingBtn = document.getElementById('start-recording-btn');
-        this.stopRecordingBtn = document.getElementById('stop-recording-btn');
-        this.recordingStatus = document.getElementById('recording-status');
-        this.audioPlayback = document.getElementById('audio-playback');
+        // Speech recognition elements
+        this.startDictationBtn = document.getElementById('start-dictation-btn');
+        this.stopDictationBtn = document.getElementById('stop-dictation-btn');
+        this.dictationStatus = document.getElementById('dictation-status');
+        this.liveTranscript = document.getElementById('live-transcript');
         
         // Display areas
         this.answersArea = document.getElementById('answers-area');
@@ -30,14 +32,78 @@ class InterviewAssistant {
         this.sampleQuestionBtns = document.querySelectorAll('.sample-question');
     }
     
+    initializeSpeechRecognition() {
+        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            this.recognition = new SpeechRecognition();
+            
+            this.recognition.lang = 'en-US';
+            this.recognition.interimResults = true;
+            this.recognition.continuous = true;
+            this.recognition.maxAlternatives = 1;
+            
+            this.recognition.onstart = () => {
+                this.isListening = true;
+                this.dictationStatus.innerHTML = '<span class="text-success">🎤 Listening... Speak clearly</span>';
+                this.liveTranscript.style.display = 'block';
+                this.liveTranscript.innerHTML = '<em class="text-muted">Listening for your speech...</em>';
+                this.startDictationBtn.disabled = true;
+                this.stopDictationBtn.disabled = false;
+            };
+            
+            this.recognition.onresult = (event) => {
+                let interimTranscript = '';
+                let finalTranscript = '';
+                
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    const transcript = event.results[i][0].transcript;
+                    if (event.results[i].isFinal) {
+                        finalTranscript += transcript;
+                    } else {
+                        interimTranscript += transcript;
+                    }
+                }
+                
+                this.transcript = finalTranscript;
+                const displayText = finalTranscript + '<span style="color: #999;">' + interimTranscript + '</span>';
+                this.liveTranscript.innerHTML = displayText || '<em class="text-muted">Listening for your speech...</em>';
+                
+                if (finalTranscript) {
+                    this.manualQuestionInput.value = finalTranscript.trim();
+                }
+            };
+            
+            this.recognition.onerror = (event) => {
+                this.handleSpeechError(event.error);
+            };
+            
+            this.recognition.onend = () => {
+                this.isListening = false;
+                this.startDictationBtn.disabled = false;
+                this.stopDictationBtn.disabled = true;
+                
+                if (this.transcript.trim()) {
+                    this.dictationStatus.innerHTML = '<span class="text-success">✓ Speech captured successfully</span>';
+                    this.liveTranscript.innerHTML = `<strong>Final transcript:</strong> ${this.transcript}`;
+                } else {
+                    this.dictationStatus.innerHTML = '<span class="text-muted">Click "Start Dictation" to speak your question</span>';
+                    this.liveTranscript.style.display = 'none';
+                }
+            };
+        } else {
+            this.dictationStatus.innerHTML = '<span class="text-warning">⚠️ Speech recognition not supported in this browser. Please use Chrome, Edge, or Safari.</span>';
+            this.startDictationBtn.disabled = true;
+        }
+    }
+    
     bindEvents() {
         this.sendQuestionBtn.addEventListener('click', () => this.sendManualQuestion());
         this.clearAnswersBtn.addEventListener('click', () => this.clearAnswers());
         this.clearQuestionBtn.addEventListener('click', () => this.clearQuestion());
         
-        // Audio recording events
-        this.startRecordingBtn.addEventListener('click', () => this.startRecording());
-        this.stopRecordingBtn.addEventListener('click', () => this.stopRecording());
+        // Speech recognition events
+        this.startDictationBtn.addEventListener('click', () => this.startDictation());
+        this.stopDictationBtn.addEventListener('click', () => this.stopDictation());
         
         // Enter key in manual question input
         this.manualQuestionInput.addEventListener('keypress', (e) => {
@@ -94,86 +160,50 @@ class InterviewAssistant {
         }
     }
     
-    async startRecording() {
-        try {
-            this.setButtonLoading(this.startRecordingBtn, true);
-            
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            this.mediaRecorder = new MediaRecorder(stream);
-            this.audioChunks = [];
-            
-            this.mediaRecorder.onstart = () => {
-                this.recordingStatus.textContent = "🎤 Recording... Speak your interview question clearly";
-                this.recordingStatus.className = "text-danger mb-3";
-                this.startRecordingBtn.disabled = true;
-                this.stopRecordingBtn.disabled = false;
-                this.setButtonLoading(this.startRecordingBtn, false);
-            };
-            
-            this.mediaRecorder.ondataavailable = (event) => {
-                if (event.data.size > 0) {
-                    this.audioChunks.push(event.data);
-                }
-            };
-            
-            this.mediaRecorder.onstop = () => {
-                const audioBlob = new Blob(this.audioChunks, { type: 'audio/webm' });
-                const audioUrl = URL.createObjectURL(audioBlob);
-                this.audioPlayback.src = audioUrl;
-                this.audioPlayback.style.display = 'block';
-                
-                this.recordingStatus.textContent = "Recording stopped. You can play your recording above or type the question manually below.";
-                this.recordingStatus.className = "text-muted mb-3";
-                this.startRecordingBtn.disabled = false;
-                this.stopRecordingBtn.disabled = true;
-                
-                // Stop all audio tracks
-                stream.getTracks().forEach(track => track.stop());
-            };
-            
-            this.mediaRecorder.start();
-            
-        } catch (error) {
-            this.setButtonLoading(this.startRecordingBtn, false);
-            
-            let errorMessage = '';
-            
-            if (error.name === 'NotAllowedError') {
-                errorMessage = "Microphone access denied. Please click the microphone icon in your browser's address bar and select 'Allow', then refresh the page.";
-            } else if (error.name === 'NotFoundError') {
-                errorMessage = "No microphone detected. Please check that your microphone is connected and working in other apps.";
-            } else if (error.name === 'NotReadableError') {
-                errorMessage = "Microphone is being used by another application. Please close other apps using the microphone and try again.";
-            } else if (error.name === 'OverconstrainedError') {
-                errorMessage = "Microphone doesn't support the required audio settings. Try using a different microphone.";
-            } else if (error.name === 'SecurityError') {
-                errorMessage = "Browser security settings are blocking microphone access. Please check your browser settings.";
-            } else {
-                errorMessage = `Microphone error (${error.name}): ${error.message}. Please check your browser permissions and microphone settings.`;
-            }
-            
-            this.recordingStatus.innerHTML = `
-                <div class="alert alert-warning" role="alert">
-                    <strong>Audio Recording Issue:</strong><br>
-                    ${errorMessage}<br><br>
-                    <small>
-                        <strong>Troubleshooting tips:</strong><br>
-                        • Make sure you're using HTTPS or localhost<br>
-                        • Allow microphone access when prompted<br>
-                        • Check that your microphone works in other apps<br>
-                        • Try refreshing the page and allowing permissions again
-                    </small>
-                </div>
-            `;
-            
-            console.error('Error accessing microphone:', error);
+    startDictation() {
+        if (this.recognition && !this.isListening) {
+            this.transcript = '';
+            this.recognition.start();
         }
     }
     
-    stopRecording() {
-        if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
-            this.mediaRecorder.stop();
+    stopDictation() {
+        if (this.recognition && this.isListening) {
+            this.recognition.stop();
         }
+    }
+    
+    handleSpeechError(error) {
+        this.isListening = false;
+        this.startDictationBtn.disabled = false;
+        this.stopDictationBtn.disabled = true;
+        
+        let errorMessage = '';
+        
+        switch (error) {
+            case 'not-allowed':
+                errorMessage = 'Microphone access denied. Please allow microphone access and try again.';
+                break;
+            case 'no-speech':
+                errorMessage = 'No speech detected. Please try speaking louder or closer to the microphone.';
+                break;
+            case 'audio-capture':
+                errorMessage = 'Audio capture failed. Please check your microphone connection.';
+                break;
+            case 'network':
+                errorMessage = 'Network error occurred during speech recognition.';
+                break;
+            case 'service-not-allowed':
+                errorMessage = 'Speech recognition service not allowed. Please check browser settings.';
+                break;
+            default:
+                errorMessage = `Speech recognition error: ${error}`;
+        }
+        
+        this.dictationStatus.innerHTML = `<span class="text-danger">⚠️ ${errorMessage}</span>`;
+        this.liveTranscript.style.display = 'none';
+        
+        console.error('Speech recognition error:', error);
     }
     
     clearAnswers() {

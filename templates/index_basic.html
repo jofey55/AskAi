@@ -59,21 +59,23 @@
                             </h5>
                         </div>
                         <div class="card-body">
-                            <!-- Audio Recording Section -->
+                            <!-- Speech Recognition Section -->
                             <div class="audio-recording-section mb-4">
-                                <label class="form-label">Record your question:</label>
+                                <label class="form-label">Speak your question:</label>
                                 <div class="d-flex gap-2 mb-3">
-                                    <button id="start-recording-btn" class="btn btn-success">
+                                    <button id="start-dictation-btn" class="btn btn-success">
                                         <i data-feather="mic" class="me-1"></i>
-                                        Start Recording
+                                        Start Dictation
                                     </button>
-                                    <button id="stop-recording-btn" class="btn btn-danger" disabled>
-                                        <i data-feather="square" class="me-1"></i>
-                                        Stop Recording
+                                    <button id="stop-dictation-btn" class="btn btn-danger" disabled>
+                                        <i data-feather="mic-off" class="me-1"></i>
+                                        Stop Dictation
                                     </button>
                                 </div>
-                                <div id="recording-status" class="text-muted mb-3">Click "Start Recording" to speak your question</div>
-                                <audio id="audio-playback" controls class="w-100 mb-3" style="display: none;"></audio>
+                                <div id="dictation-status" class="text-muted mb-3">Click "Start Dictation" to speak your question</div>
+                                <div id="live-transcript" class="form-control" style="min-height: 80px; background: rgba(255,255,255,0.9); border: 2px dashed rgba(102, 126, 234, 0.3); display: none;">
+                                    <em class="text-muted">Your speech will appear here...</em>
+                                </div>
                             </div>
 
                             <!-- Manual Question Input -->
