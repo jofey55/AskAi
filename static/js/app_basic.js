@@ -136,16 +136,35 @@ class InterviewAssistant {
         } catch (error) {
             this.setButtonLoading(this.startRecordingBtn, false);
             
+            let errorMessage = '';
+            
             if (error.name === 'NotAllowedError') {
-                this.recordingStatus.textContent = "Microphone access denied. Please allow microphone access and try again.";
-                this.recordingStatus.className = "text-danger mb-3";
+                errorMessage = "Microphone access denied. Please click the microphone icon in your browser's address bar and select 'Allow', then refresh the page.";
             } else if (error.name === 'NotFoundError') {
-                this.recordingStatus.textContent = "No microphone found. Please check your microphone connection.";
-                this.recordingStatus.className = "text-danger mb-3";
+                errorMessage = "No microphone detected. Please check that your microphone is connected and working in other apps.";
+            } else if (error.name === 'NotReadableError') {
+                errorMessage = "Microphone is being used by another application. Please close other apps using the microphone and try again.";
+            } else if (error.name === 'OverconstrainedError') {
+                errorMessage = "Microphone doesn't support the required audio settings. Try using a different microphone.";
+            } else if (error.name === 'SecurityError') {
+                errorMessage = "Browser security settings are blocking microphone access. Please check your browser settings.";
             } else {
-                this.recordingStatus.textContent = `Recording error: ${error.message}`;
-                this.recordingStatus.className = "text-danger mb-3";
+                errorMessage = `Microphone error (${error.name}): ${error.message}. Please check your browser permissions and microphone settings.`;
             }
+            
+            this.recordingStatus.innerHTML = `
+                <div class="alert alert-warning" role="alert">
+                    <strong>Audio Recording Issue:</strong><br>
+                    ${errorMessage}<br><br>
+                    <small>
+                        <strong>Troubleshooting tips:</strong><br>
+                        • Make sure you're using HTTPS or localhost<br>
+                        • Allow microphone access when prompted<br>
+                        • Check that your microphone works in other apps<br>
+                        • Try refreshing the page and allowing permissions again
+                    </small>
+                </div>
+            `;
             
             console.error('Error accessing microphone:', error);
         }
