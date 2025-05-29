@@ -12,7 +12,7 @@ app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET", "interview_assistant_secret_key")
 
 # Initialize SocketIO for real-time communication
-socketio = SocketIO(app, cors_allowed_origins="*")
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
 
 # Initialize OpenAI client
 openai_client = OpenAIClient()

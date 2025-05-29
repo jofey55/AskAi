@@ -1,11 +1,8 @@
 class InterviewAssistant {
     constructor() {
-        this.socket = null;
-        this.isConnected = false;
         this.answerCount = 0;
         
         this.initializeElements();
-        this.initializeSocket();
         this.bindEvents();
     }
     
@@ -17,43 +14,12 @@ class InterviewAssistant {
         
         // Display areas
         this.answersArea = document.getElementById('answers-area');
-        this.connectionStatus = document.getElementById('connection-status');
         
         // Input elements
         this.manualQuestionInput = document.getElementById('manual-question');
         
         // Sample question buttons
         this.sampleQuestionBtns = document.querySelectorAll('.sample-question');
-    }
-    
-    initializeSocket() {
-        this.socket = io();
-        
-        this.socket.on('connect', () => {
-            this.isConnected = true;
-            this.updateConnectionStatus(true);
-            this.sendQuestionBtn.disabled = false;
-            console.log('Connected to server');
-        });
-        
-        this.socket.on('disconnect', () => {
-            this.isConnected = false;
-            this.updateConnectionStatus(false);
-            this.sendQuestionBtn.disabled = true;
-            console.log('Disconnected from server');
-        });
-        
-        this.socket.on('status_update', (data) => {
-            console.log('Status update:', data.message);
-        });
-        
-        this.socket.on('answer_received', (data) => {
-            this.displayAnswer(data.question, data.answer, data.timestamp);
-        });
-        
-        this.socket.on('error', (data) => {
-            this.showError(data.message);
-        });
     }
     
     bindEvents() {
@@ -93,8 +59,21 @@ class InterviewAssistant {
         try {
             this.setButtonLoading(this.sendQuestionBtn, true);
             
-            // Send via Socket.IO for real-time response
-            this.socket.emit('manual_question', { question: question });
+            const response = await fetch('/send_question', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ question: question })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                this.displayAnswer(data.question, data.answer, data.timestamp);
+            } else {
+                this.showError(data.message);
+            }
             
         } catch (error) {
             this.showError(`Failed to send question: ${error.message}`);
@@ -117,23 +96,6 @@ class InterviewAssistant {
     clearQuestion() {
         this.manualQuestionInput.value = '';
         this.autoResizeTextarea({ target: this.manualQuestionInput });
-    }
-    
-    updateConnectionStatus(connected) {
-        const icon = this.connectionStatus.querySelector('i');
-        const text = this.connectionStatus.childNodes[this.connectionStatus.childNodes.length - 1];
-        
-        if (connected) {
-            icon.setAttribute('data-feather', 'wifi');
-            text.textContent = ' Connected';
-            this.connectionStatus.className = 'nav-link connection-connected';
-        } else {
-            icon.setAttribute('data-feather', 'wifi-off');
-            text.textContent = ' Disconnected';
-            this.connectionStatus.className = 'nav-link connection-disconnected';
-        }
-        
-        feather.replace();
     }
     
     displayAnswer(question, answer, timestamp) {
@@ -173,21 +135,15 @@ class InterviewAssistant {
                     <i data-feather="message-square" style="width: 14px; height: 14px;"></i>
                     Copy Question
                 </button>
-                <button class="btn btn-sm btn-outline-info improve-btn" data-question="${this.escapeHtml(question)}" data-answer="${this.escapeHtml(answer)}">
-                    <i data-feather="zap" style="width: 14px; height: 14px;"></i>
-                    Improve Answer
-                </button>
             </div>
         `;
         
         // Bind copy events
         const copyBtn = div.querySelector('.copy-btn');
         const copyQuestionBtn = div.querySelector('.copy-question-btn');
-        const improveBtn = div.querySelector('.improve-btn');
         
         copyBtn.addEventListener('click', (e) => this.copyToClipboard(e, answer));
         copyQuestionBtn.addEventListener('click', (e) => this.copyToClipboard(e, question));
-        improveBtn.addEventListener('click', (e) => this.improveAnswer(e, question, answer));
         
         // Replace feather icons
         setTimeout(() => feather.replace(), 0);
@@ -216,35 +172,6 @@ class InterviewAssistant {
             
         } catch (error) {
             this.showError('Failed to copy to clipboard');
-        }
-    }
-    
-    async improveAnswer(event, question, currentAnswer) {
-        const button = event.currentTarget;
-        this.setButtonLoading(button, true);
-        
-        try {
-            const response = await fetch('/send_question', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    question: `Please improve this interview answer: Question: "${question}" Current answer: "${currentAnswer}" Provide a better, more detailed version.`
-                })
-            });
-            
-            const data = await response.json();
-            
-            if (data.success) {
-                // The improved answer will be displayed automatically via WebSocket
-            } else {
-                this.showError(data.message);
-            }
-        } catch (error) {
-            this.showError(`Failed to improve answer: ${error.message}`);
-        } finally {
-            this.setButtonLoading(button, false);
         }
     }
     
