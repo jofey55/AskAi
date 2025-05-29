@@ -1,6 +1,8 @@
 class InterviewAssistant {
     constructor() {
         this.answerCount = 0;
+        this.mediaRecorder = null;
+        this.audioChunks = [];
         
         this.initializeElements();
         this.bindEvents();
@@ -11,6 +13,12 @@ class InterviewAssistant {
         this.sendQuestionBtn = document.getElementById('send-question-btn');
         this.clearAnswersBtn = document.getElementById('clear-answers-btn');
         this.clearQuestionBtn = document.getElementById('clear-question-btn');
+        
+        // Audio recording elements
+        this.startRecordingBtn = document.getElementById('start-recording-btn');
+        this.stopRecordingBtn = document.getElementById('stop-recording-btn');
+        this.recordingStatus = document.getElementById('recording-status');
+        this.audioPlayback = document.getElementById('audio-playback');
         
         // Display areas
         this.answersArea = document.getElementById('answers-area');
@@ -26,6 +34,10 @@ class InterviewAssistant {
         this.sendQuestionBtn.addEventListener('click', () => this.sendManualQuestion());
         this.clearAnswersBtn.addEventListener('click', () => this.clearAnswers());
         this.clearQuestionBtn.addEventListener('click', () => this.clearQuestion());
+        
+        // Audio recording events
+        this.startRecordingBtn.addEventListener('click', () => this.startRecording());
+        this.stopRecordingBtn.addEventListener('click', () => this.stopRecording());
         
         // Enter key in manual question input
         this.manualQuestionInput.addEventListener('keypress', (e) => {
@@ -79,6 +91,69 @@ class InterviewAssistant {
             this.showError(`Failed to send question: ${error.message}`);
         } finally {
             this.setButtonLoading(this.sendQuestionBtn, false);
+        }
+    }
+    
+    async startRecording() {
+        try {
+            this.setButtonLoading(this.startRecordingBtn, true);
+            
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            this.mediaRecorder = new MediaRecorder(stream);
+            this.audioChunks = [];
+            
+            this.mediaRecorder.onstart = () => {
+                this.recordingStatus.textContent = "🎤 Recording... Speak your interview question clearly";
+                this.recordingStatus.className = "text-danger mb-3";
+                this.startRecordingBtn.disabled = true;
+                this.stopRecordingBtn.disabled = false;
+                this.setButtonLoading(this.startRecordingBtn, false);
+            };
+            
+            this.mediaRecorder.ondataavailable = (event) => {
+                if (event.data.size > 0) {
+                    this.audioChunks.push(event.data);
+                }
+            };
+            
+            this.mediaRecorder.onstop = () => {
+                const audioBlob = new Blob(this.audioChunks, { type: 'audio/webm' });
+                const audioUrl = URL.createObjectURL(audioBlob);
+                this.audioPlayback.src = audioUrl;
+                this.audioPlayback.style.display = 'block';
+                
+                this.recordingStatus.textContent = "Recording stopped. You can play your recording above or type the question manually below.";
+                this.recordingStatus.className = "text-muted mb-3";
+                this.startRecordingBtn.disabled = false;
+                this.stopRecordingBtn.disabled = true;
+                
+                // Stop all audio tracks
+                stream.getTracks().forEach(track => track.stop());
+            };
+            
+            this.mediaRecorder.start();
+            
+        } catch (error) {
+            this.setButtonLoading(this.startRecordingBtn, false);
+            
+            if (error.name === 'NotAllowedError') {
+                this.recordingStatus.textContent = "Microphone access denied. Please allow microphone access and try again.";
+                this.recordingStatus.className = "text-danger mb-3";
+            } else if (error.name === 'NotFoundError') {
+                this.recordingStatus.textContent = "No microphone found. Please check your microphone connection.";
+                this.recordingStatus.className = "text-danger mb-3";
+            } else {
+                this.recordingStatus.textContent = `Recording error: ${error.message}`;
+                this.recordingStatus.className = "text-danger mb-3";
+            }
+            
+            console.error('Error accessing microphone:', error);
+        }
+    }
+    
+    stopRecording() {
+        if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
+            this.mediaRecorder.stop();
         }
     }
     

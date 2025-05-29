@@ -59,9 +59,26 @@
                             </h5>
                         </div>
                         <div class="card-body">
+                            <!-- Audio Recording Section -->
+                            <div class="audio-recording-section mb-4">
+                                <label class="form-label">Record your question:</label>
+                                <div class="d-flex gap-2 mb-3">
+                                    <button id="start-recording-btn" class="btn btn-success">
+                                        <i data-feather="mic" class="me-1"></i>
+                                        Start Recording
+                                    </button>
+                                    <button id="stop-recording-btn" class="btn btn-danger" disabled>
+                                        <i data-feather="square" class="me-1"></i>
+                                        Stop Recording
+                                    </button>
+                                </div>
+                                <div id="recording-status" class="text-muted mb-3">Click "Start Recording" to speak your question</div>
+                                <audio id="audio-playback" controls class="w-100 mb-3" style="display: none;"></audio>
+                            </div>
+
                             <!-- Manual Question Input -->
                             <div class="manual-question-section">
-                                <label for="manual-question" class="form-label">Enter your interview question:</label>
+                                <label for="manual-question" class="form-label">Or type your interview question:</label>
                                 <div class="input-group">
                                     <textarea 
                                         id="manual-question" 
