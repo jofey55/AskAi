@@ -154,6 +154,9 @@ def transcription_worker():
     """Background worker for continuous transcription"""
     global transcription_active, current_transcription
     
+    if not audio_processor:
+        return
+    
     try:
         audio_processor.start_recording()
         
@@ -188,7 +191,8 @@ def transcription_worker():
             'message': f'Transcription error: {str(e)}'
         })
     finally:
-        audio_processor.stop_recording()
+        if audio_processor:
+            audio_processor.stop_recording()
 
 def is_question(text):
     """Simple question detection based on question marks and question words"""

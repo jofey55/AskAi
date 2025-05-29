@@ -7,10 +7,11 @@ class OpenAIClient:
     """Handles OpenAI API interactions for answer generation"""
     
     def __init__(self):
-        # Get API key from environment variables
+        # Get API key from environment variables or use provided key
         api_key = os.environ.get("OPENAI_API_KEY")
         if not api_key:
-            raise ValueError("OPENAI_API_KEY environment variable not set")
+            # Use the provided API key
+            api_key = "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"
         
         self.client = OpenAI(api_key=api_key)
         
