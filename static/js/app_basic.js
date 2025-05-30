@@ -36,6 +36,7 @@ class InterviewAssistant {
         if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             this.recognition = new SpeechRecognition();
+            this.lastFinalTranscript = '';
             
             this.recognition.lang = 'en-US';
             this.recognition.interimResults = true;
@@ -53,14 +54,21 @@ class InterviewAssistant {
             
             this.recognition.onresult = (event) => {
                 let interimTranscript = '';
+                let finalTranscript = '';
                 
                 for (let i = event.resultIndex; i < event.results.length; i++) {
                     const transcript = event.results[i][0].transcript;
                     if (event.results[i].isFinal) {
-                        this.transcript += transcript + ' ';
+                        finalTranscript += transcript;
                     } else {
                         interimTranscript += transcript;
                     }
+                }
+                
+                // Only add new final transcript if it's different from the last one
+                if (finalTranscript && finalTranscript !== this.lastFinalTranscript) {
+                    this.transcript += finalTranscript + ' ';
+                    this.lastFinalTranscript = finalTranscript;
                 }
                 
                 const displayText = this.transcript + '<span style="color: #999;">' + interimTranscript + '</span>';
@@ -162,6 +170,7 @@ class InterviewAssistant {
     startDictation() {
         if (this.recognition && !this.isListening) {
             this.transcript = '';
+            this.lastFinalTranscript = '';
             this.recognition.start();
         }
     }
