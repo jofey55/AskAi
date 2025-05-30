@@ -53,23 +53,22 @@ class InterviewAssistant {
             
             this.recognition.onresult = (event) => {
                 let interimTranscript = '';
-                let finalTranscript = '';
                 
                 for (let i = event.resultIndex; i < event.results.length; i++) {
                     const transcript = event.results[i][0].transcript;
                     if (event.results[i].isFinal) {
-                        finalTranscript += transcript;
+                        this.transcript += transcript + ' ';
                     } else {
                         interimTranscript += transcript;
                     }
                 }
                 
-                this.transcript = finalTranscript;
-                const displayText = finalTranscript + '<span style="color: #999;">' + interimTranscript + '</span>';
+                const displayText = this.transcript + '<span style="color: #999;">' + interimTranscript + '</span>';
                 this.liveTranscript.innerHTML = displayText || '<em class="text-muted">Listening for your speech...</em>';
                 
-                if (finalTranscript) {
-                    this.manualQuestionInput.value = finalTranscript.trim();
+                const fullText = (this.transcript + interimTranscript).trim();
+                if (fullText) {
+                    this.manualQuestionInput.value = fullText;
                 }
             };
             
@@ -249,7 +248,7 @@ class InterviewAssistant {
                 <i data-feather="help-circle" style="width: 16px; height: 16px;"></i>
                 ${this.escapeHtml(question)}
             </div>
-            <div class="answer-text">${this.escapeHtml(answer)}</div>
+            <div class="answer-text" style="color: #181818; font-weight: 500;">${this.escapeHtml(answer)}</div>
             <div class="answer-actions">
                 <button class="btn btn-sm btn-outline-primary copy-btn" data-text="${this.escapeHtml(answer)}">
                     <i data-feather="copy" style="width: 14px; height: 14px;"></i>

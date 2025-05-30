@@ -306,6 +306,8 @@ textarea.form-control {
     border: 2px solid rgba(102, 126, 234, 0.2);
     border-radius: 12px;
     padding: 1rem;
+    color: #181818;
+    font-weight: 500;
 }
 
 .form-control:focus {
@@ -313,6 +315,17 @@ textarea.form-control {
     border-color: #667eea;
     box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.15);
     outline: none;
+}
+
+/* Transcript and answer text styling */
+#live-transcript {
+    color: #181818 !important;
+    font-weight: 500;
+}
+
+.answer-text {
+    color: #181818;
+    font-weight: 500;
 }
 
 .form-label {
