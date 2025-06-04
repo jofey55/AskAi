@@ -395,38 +395,117 @@ body::before {
     }
 }
 
+/* Futuristic logo styling */
+.futuristic-logo {
+    position: relative;
+}
+
+.logo-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.logo-icon {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.logo-circle {
+    position: absolute;
+    width: 40px;
+    height: 40px;
+    border: 2px solid transparent;
+    border-radius: 50%;
+    background: linear-gradient(45deg, #00d2ff, #3a7bd5, #ff6b6b);
+    animation: rotate 4s linear infinite;
+}
+
+.logo-circle::before {
+    content: '';
+    position: absolute;
+    inset: 2px;
+    background: linear-gradient(135deg, #0f0f23 0%, #1a1a3a 100%);
+    border-radius: 50%;
+}
+
+.logo-text {
+    background: linear-gradient(135deg, #00d2ff 0%, #3a7bd5 50%, #ff6b6b 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-weight: 700;
+    letter-spacing: 1px;
+    position: relative;
+}
+
+@keyframes rotate {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
 /* Form controls with modern styling */
 textarea.form-control {
-    background: rgba(255, 255, 255, 0.9);
-    border: 2px solid rgba(59, 130, 246, 0.2);
-    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 16px;
     padding: 1rem;
-    color: #181818;
+    color: #ffffff;
     font-weight: 500;
+    backdrop-filter: blur(10px);
 }
 
 .form-control:focus {
-    background: rgba(255, 255, 255, 1);
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.15);
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(0, 210, 255, 0.5);
+    box-shadow: 0 0 0 0.2rem rgba(0, 210, 255, 0.25);
     outline: none;
+    color: #ffffff;
+}
+
+.form-control::placeholder {
+    color: rgba(255, 255, 255, 0.6);
 }
 
 /* Transcript and answer text styling */
 #live-transcript {
-    color: #181818 !important;
+    color: #ffffff !important;
     font-weight: 500;
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px dashed rgba(0, 210, 255, 0.3);
 }
 
 .answer-text {
-    color: #181818;
+    color: #ffffff;
     font-weight: 500;
 }
 
 .form-label {
     font-weight: 600;
-    color: #374151;
+    color: #ffffff;
     margin-bottom: 0.75rem;
+    text-shadow: 0 0 10px rgba(0, 210, 255, 0.3);
+}
+
+/* Text colors for dark theme */
+.card-body {
+    color: #ffffff;
+}
+
+.text-muted {
+    color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.alert-info {
+    background: linear-gradient(135deg, rgba(0, 210, 255, 0.1) 0%, rgba(58, 123, 213, 0.1) 100%);
+    border: 1px solid rgba(0, 210, 255, 0.3);
+    color: #ffffff;
+}
+
+h5, h6 {
+    color: #ffffff;
 }
 
 /* Sample question buttons */
