@@ -40,7 +40,7 @@ class InterviewAssistant {
             
             this.recognition.lang = 'en-US';
             this.recognition.interimResults = true;
-            this.recognition.continuous = false;
+            this.recognition.continuous = true;
             this.recognition.maxAlternatives = 1;
             
             this.recognition.onstart = () => {
@@ -193,14 +193,7 @@ class InterviewAssistant {
                 errorMessage = 'Microphone access denied. Please allow microphone access and try again.';
                 break;
             case 'no-speech':
-                errorMessage = 'No speech detected. Try speaking immediately after clicking "Start Dictation".';
-                // Auto-restart for no-speech errors
-                setTimeout(() => {
-                    if (!this.isListening) {
-                        this.dictationStatus.innerHTML = '<span class="text-muted">Click "Start Dictation" to speak your question</span>';
-                        this.liveTranscript.style.display = 'none';
-                    }
-                }, 2000);
+                errorMessage = 'No speech detected. Please try speaking louder or closer to the microphone.';
                 break;
             case 'audio-capture':
                 errorMessage = 'Audio capture failed. Please check your microphone connection.';
@@ -215,7 +208,8 @@ class InterviewAssistant {
                 errorMessage = `Speech recognition error: ${error}`;
         }
         
-        this.dictationStatus.innerHTML = `<span class="text-warning">${errorMessage}</span>`;
+        this.dictationStatus.innerHTML = `<span class="text-danger">⚠️ ${errorMessage}</span>`;
+        this.liveTranscript.style.display = 'none';
         
         console.error('Speech recognition error:', error);
     }
