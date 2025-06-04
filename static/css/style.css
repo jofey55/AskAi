@@ -403,7 +403,7 @@ body::before {
 .logo-container {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 16px;
 }
 
 .logo-icon {
@@ -413,32 +413,35 @@ body::before {
     justify-content: center;
 }
 
-.logo-circle {
-    position: absolute;
-    width: 40px;
-    height: 40px;
-    border: 2px solid transparent;
-    border-radius: 50%;
-    background: linear-gradient(45deg, #00d2ff, #3a7bd5, #ff6b6b);
-    animation: rotate 4s linear infinite;
+.custom-logo {
+    filter: drop-shadow(0 0 20px rgba(0, 210, 255, 0.3));
+    animation: logoFloat 3s ease-in-out infinite;
 }
 
-.logo-circle::before {
-    content: '';
-    position: absolute;
-    inset: 2px;
-    background: linear-gradient(135deg, #0f0f23 0%, #1a1a3a 100%);
-    border-radius: 50%;
+.custom-logo:hover {
+    filter: drop-shadow(0 0 30px rgba(0, 210, 255, 0.6));
+    transform: scale(1.05);
+    transition: all 0.3s ease;
 }
 
 .logo-text {
-    background: linear-gradient(135deg, #00d2ff 0%, #3a7bd5 50%, #ff6b6b 100%);
+    background: linear-gradient(135deg, #00d2ff 0%, #3a7bd5 30%, #667eea 60%, #ff6b6b 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
     font-weight: 700;
     letter-spacing: 1px;
     position: relative;
+    text-shadow: 0 0 30px rgba(0, 210, 255, 0.5);
+}
+
+@keyframes logoFloat {
+    0%, 100% { 
+        transform: translateY(0px) rotate(0deg);
+    }
+    50% { 
+        transform: translateY(-3px) rotate(1deg);
+    }
 }
 
 @keyframes rotate {
