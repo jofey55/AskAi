@@ -31,6 +31,9 @@ class InterviewAssistant {
         
         // Sample question buttons
         this.sampleQuestionBtns = document.querySelectorAll('.sample-question');
+        
+        // Speech toggle button
+        this.speechToggleBtn = document.getElementById('speech-toggle');
     }
     
     initializeSpeechRecognition() {
@@ -110,6 +113,45 @@ class InterviewAssistant {
         }
     }
     
+    readAnswerAloud(text) {
+        if ('speechSynthesis' in window && this.speechEnabled) {
+            // Stop any ongoing speech
+            speechSynthesis.cancel();
+            
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'en-US';
+            utterance.rate = 0.9;
+            utterance.pitch = 1.0;
+            utterance.volume = 0.8;
+            
+            // Optional: Choose a specific voice
+            const voices = speechSynthesis.getVoices();
+            const preferredVoice = voices.find(voice => 
+                voice.lang.startsWith('en') && voice.name.includes('Google')
+            ) || voices.find(voice => voice.lang.startsWith('en'));
+            
+            if (preferredVoice) {
+                utterance.voice = preferredVoice;
+            }
+            
+            speechSynthesis.speak(utterance);
+        }
+    }
+    
+    toggleSpeech() {
+        this.speechEnabled = !this.speechEnabled;
+        const speechToggle = document.getElementById('speech-toggle');
+        if (speechToggle) {
+            speechToggle.innerHTML = this.speechEnabled 
+                ? '<i data-feather="volume-2" class="me-1"></i>Speech ON'
+                : '<i data-feather="volume-x" class="me-1"></i>Speech OFF';
+            speechToggle.className = this.speechEnabled 
+                ? 'btn btn-sm btn-success'
+                : 'btn btn-sm btn-outline-secondary';
+            feather.replace();
+        }
+    }
+    
     bindEvents() {
         this.sendQuestionBtn.addEventListener('click', () => this.sendManualQuestion());
         this.clearAnswersBtn.addEventListener('click', () => this.clearAnswers());
@@ -118,6 +160,11 @@ class InterviewAssistant {
         // Speech recognition events
         this.startDictationBtn.addEventListener('click', () => this.startDictation());
         this.stopAndAskBtn.addEventListener('click', () => this.stopDictationAndAsk());
+        
+        // Speech toggle event
+        if (this.speechToggleBtn) {
+            this.speechToggleBtn.addEventListener('click', () => this.toggleSpeech());
+        }
         
         // Enter key in manual question input
         this.manualQuestionInput.addEventListener('keypress', (e) => {
@@ -286,15 +333,21 @@ class InterviewAssistant {
                     <i data-feather="message-square" style="width: 14px; height: 14px;"></i>
                     Copy Question
                 </button>
+                <button class="btn btn-sm btn-outline-info replay-btn" data-text="${this.escapeHtml(answer)}">
+                    <i data-feather="volume-2" style="width: 14px; height: 14px;"></i>
+                    Read Aloud
+                </button>
             </div>
         `;
         
-        // Bind copy events
+        // Bind copy and replay events
         const copyBtn = div.querySelector('.copy-btn');
         const copyQuestionBtn = div.querySelector('.copy-question-btn');
+        const replayBtn = div.querySelector('.replay-btn');
         
         copyBtn.addEventListener('click', (e) => this.copyToClipboard(e, answer));
         copyQuestionBtn.addEventListener('click', (e) => this.copyToClipboard(e, question));
+        replayBtn.addEventListener('click', () => this.readAnswerAloud(answer));
         
         // Replace feather icons
         setTimeout(() => feather.replace(), 0);
