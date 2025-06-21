@@ -103,7 +103,7 @@ class InterviewAssistant {
                         setTimeout(() => this.sendManualQuestion(), 500);
                     }
                 } else {
-                    this.dictationStatus.innerHTML = '<span class="text-muted">Click "Start Dictation" to speak your question</span>';
+                    this.dictationStatus.innerHTML = '<span class="text-muted">Click "Ask AI" to speak your question</span>';
                     this.liveTranscript.style.display = 'none';
                 }
             };
