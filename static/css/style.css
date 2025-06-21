@@ -141,22 +141,20 @@ body::before {
 
 .answer-question {
     font-weight: 700;
-    color: #00d2ff;
+    color: var(--accent-primary);
     margin-bottom: 1rem;
-    font-size: 1.1rem;
-    text-shadow: 0 0 15px rgba(0, 210, 255, 0.4);
+    font-size: 1.2rem;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
 }
 
 .answer-text {
     margin-bottom: 1.5rem;
     line-height: 1.8;
     font-size: 1.05rem;
-    color: #ffffff;
+    color: var(--text-secondary);
     font-weight: 400;
-    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
     position: relative;
     padding-left: 1rem;
 }
@@ -168,7 +166,7 @@ body::before {
     top: 0;
     bottom: 0;
     width: 3px;
-    background: linear-gradient(135deg, #00d2ff 0%, #3a7bd5 100%);
+    background: linear-gradient(135deg, var(--accent-secondary) 0%, var(--accent-tertiary) 100%);
     border-radius: 2px;
 }
 
@@ -181,9 +179,9 @@ body::before {
 }
 
 .answer-actions .btn {
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    color: #ffffff;
+    background: rgba(0, 0, 0, 0.05);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
     font-size: 0.85rem;
     padding: 0.5rem 1rem;
     border-radius: 12px;
@@ -191,15 +189,16 @@ body::before {
 }
 
 .answer-actions .btn:hover {
-    background: linear-gradient(135deg, rgba(0, 210, 255, 0.2) 0%, rgba(58, 123, 213, 0.2) 100%);
-    border-color: rgba(0, 210, 255, 0.4);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 210, 255, 0.2);
+    background: var(--accent-primary);
+    border-color: var(--accent-primary);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px var(--glow-color);
 }
 
 .answer-timestamp {
     font-size: 0.8rem;
-    color: rgba(255, 255, 255, 0.6);
+    color: var(--text-muted);
     margin-bottom: 0.75rem;
     display: flex;
     align-items: center;
