@@ -4,6 +4,7 @@ class InterviewAssistant {
         this.recognition = null;
         this.isListening = false;
         this.transcript = '';
+        this.speechEnabled = true; // TTS toggle
         
         this.initializeElements();
         this.initializeSpeechRecognition();
@@ -18,7 +19,7 @@ class InterviewAssistant {
         
         // Speech recognition elements
         this.startDictationBtn = document.getElementById('start-dictation-btn');
-        this.stopDictationBtn = document.getElementById('stop-dictation-btn');
+        this.stopAndAskBtn = document.getElementById('stop-and-ask-btn');
         this.dictationStatus = document.getElementById('dictation-status');
         this.liveTranscript = document.getElementById('live-transcript');
         
@@ -49,7 +50,7 @@ class InterviewAssistant {
                 this.liveTranscript.style.display = 'block';
                 this.liveTranscript.innerHTML = '<em class="text-muted">Listening for your speech...</em>';
                 this.startDictationBtn.disabled = true;
-                this.stopDictationBtn.disabled = false;
+                this.stopAndAskBtn.disabled = false;
             };
             
             this.recognition.onresult = (event) => {
@@ -87,11 +88,17 @@ class InterviewAssistant {
             this.recognition.onend = () => {
                 this.isListening = false;
                 this.startDictationBtn.disabled = false;
-                this.stopDictationBtn.disabled = true;
+                this.stopAndAskBtn.disabled = true;
                 
                 if (this.transcript.trim()) {
                     this.dictationStatus.innerHTML = '<span class="text-success">✓ Speech captured successfully</span>';
                     this.liveTranscript.innerHTML = `<strong>Final transcript:</strong> ${this.transcript}`;
+                    
+                    // If we're in auto-ask mode, send the question automatically
+                    if (this.autoAskAfterStop) {
+                        this.autoAskAfterStop = false;
+                        setTimeout(() => this.sendManualQuestion(), 500);
+                    }
                 } else {
                     this.dictationStatus.innerHTML = '<span class="text-muted">Click "Start Dictation" to speak your question</span>';
                     this.liveTranscript.style.display = 'none';
@@ -110,7 +117,7 @@ class InterviewAssistant {
         
         // Speech recognition events
         this.startDictationBtn.addEventListener('click', () => this.startDictation());
-        this.stopDictationBtn.addEventListener('click', () => this.stopDictation());
+        this.stopAndAskBtn.addEventListener('click', () => this.stopDictationAndAsk());
         
         // Enter key in manual question input
         this.manualQuestionInput.addEventListener('keypress', (e) => {
@@ -156,6 +163,10 @@ class InterviewAssistant {
             
             if (data.success) {
                 this.displayAnswer(data.question, data.answer, data.timestamp);
+                // Read answer aloud if speech is enabled
+                if (this.speechEnabled) {
+                    this.readAnswerAloud(data.answer);
+                }
             } else {
                 this.showError(data.message);
             }
@@ -181,10 +192,18 @@ class InterviewAssistant {
         }
     }
     
+    stopDictationAndAsk() {
+        if (this.recognition && this.isListening) {
+            this.autoAskAfterStop = true;
+            this.recognition.stop();
+            this.dictationStatus.innerHTML = '<span class="text-info">⏳ Stopping dictation and getting AI answer...</span>';
+        }
+    }
+    
     handleSpeechError(error) {
         this.isListening = false;
         this.startDictationBtn.disabled = false;
-        this.stopDictationBtn.disabled = true;
+        this.stopAndAskBtn.disabled = true;
         
         let errorMessage = '';
         
