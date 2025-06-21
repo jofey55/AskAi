@@ -450,6 +450,237 @@ class InterviewAssistant {
         div.textContent = text;
         return div.innerHTML;
     }
+    
+    // Session Management Methods
+    async loadCurrentSession() {
+        try {
+            const response = await fetch('/current_session');
+            const data = await response.json();
+            
+            if (data.success && data.session) {
+                this.currentSession = data.session;
+                this.updateSessionUI();
+            }
+        } catch (error) {
+            console.warn('Failed to load current session:', error);
+        }
+    }
+    
+    async loadSessions() {
+        try {
+            const response = await fetch('/sessions');
+            const data = await response.json();
+            
+            if (data.success) {
+                this.sessions = data.sessions;
+            }
+        } catch (error) {
+            console.warn('Failed to load sessions:', error);
+        }
+    }
+    
+    toggleSessionControls() {
+        const isVisible = this.sessionControls.style.display !== 'none';
+        this.sessionControls.style.display = isVisible ? 'none' : 'block';
+        
+        if (!isVisible) {
+            this.loadSessions();
+        }
+    }
+    
+    async createNewSession() {
+        try {
+            const title = prompt('Enter session name:', `Session ${new Date().toLocaleDateString()}`);
+            if (!title) return;
+            
+            const response = await fetch('/sessions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title })
+            });
+            
+            const data = await response.json();
+            if (data.success) {
+                this.currentSession = data.session;
+                this.updateSessionUI();
+                this.clearAnswers();
+                this.showSuccess('New session created and activated');
+            } else {
+                this.showError(data.message);
+            }
+        } catch (error) {
+            this.showError('Failed to create session');
+        }
+    }
+    
+    async createNewSessionFromModal() {
+        await this.createNewSession();
+        if (this.sessionModal) {
+            const modal = bootstrap.Modal.getInstance(this.sessionModal);
+            if (modal) modal.hide();
+        }
+        this.loadSessionsList();
+    }
+    
+    showSessionModal() {
+        this.loadSessionsList();
+        const modal = new bootstrap.Modal(this.sessionModal);
+        modal.show();
+    }
+    
+    async loadSessionsList() {
+        try {
+            const response = await fetch('/sessions');
+            const data = await response.json();
+            
+            if (data.success) {
+                this.renderSessionsList(data.sessions);
+            }
+        } catch (error) {
+            this.showError('Failed to load sessions');
+        }
+    }
+    
+    renderSessionsList(sessions) {
+        if (sessions.length === 0) {
+            this.sessionsList.innerHTML = `
+                <div class="text-center text-muted py-4">
+                    <i data-feather="folder-x" style="width: 32px; height: 32px; opacity: 0.3;"></i>
+                    <p class="mt-2 mb-0">No sessions found</p>
+                    <small>Create your first session to get started</small>
+                </div>
+            `;
+            feather.replace();
+            return;
+        }
+        
+        this.sessionsList.innerHTML = sessions.map(session => `
+            <div class="list-group-item d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="mb-1">${this.escapeHtml(session.title)}</h6>
+                    <small class="text-muted">
+                        ${session.interaction_count} interactions • 
+                        ${new Date(session.updated_at).toLocaleDateString()}
+                        ${session.is_active ? ' • <span class="text-success">Active</span>' : ''}
+                    </small>
+                </div>
+                <div class="btn-group btn-group-sm">
+                    <button class="btn btn-outline-primary" onclick="app.loadSession(${session.id})">
+                        <i data-feather="play" style="width: 14px; height: 14px;"></i>
+                    </button>
+                    <button class="btn btn-outline-secondary" onclick="app.renameSession(${session.id})">
+                        <i data-feather="edit-2" style="width: 14px; height: 14px;"></i>
+                    </button>
+                    <button class="btn btn-outline-danger" onclick="app.deleteSession(${session.id})">
+                        <i data-feather="trash-2" style="width: 14px; height: 14px;"></i>
+                    </button>
+                </div>
+            </div>
+        `).join('');
+        
+        feather.replace();
+    }
+    
+    async loadSession(sessionId) {
+        try {
+            const response = await fetch(`/sessions/${sessionId}`);
+            const data = await response.json();
+            
+            if (data.success) {
+                // Activate session
+                await fetch(`/sessions/${sessionId}/activate`, { method: 'POST' });
+                
+                this.currentSession = data.session;
+                this.clearAnswers();
+                
+                // Load interactions
+                data.interactions.forEach(interaction => {
+                    this.displayAnswer(interaction.question, interaction.answer, interaction.created_at);
+                });
+                
+                this.updateSessionUI();
+                this.showSuccess(`Loaded session: ${data.session.title}`);
+                
+                // Close modal
+                const modal = bootstrap.Modal.getInstance(this.sessionModal);
+                if (modal) modal.hide();
+            }
+        } catch (error) {
+            this.showError('Failed to load session');
+        }
+    }
+    
+    async deleteSession(sessionId) {
+        if (!confirm('Are you sure you want to delete this session?')) return;
+        
+        try {
+            const response = await fetch(`/sessions/${sessionId}`, { method: 'DELETE' });
+            const data = await response.json();
+            
+            if (data.success) {
+                this.loadSessionsList();
+                this.showSuccess('Session deleted');
+                
+                if (this.currentSession && this.currentSession.id === sessionId) {
+                    this.currentSession = null;
+                    this.updateSessionUI();
+                }
+            }
+        } catch (error) {
+            this.showError('Failed to delete session');
+        }
+    }
+    
+    async renameSession(sessionId) {
+        const newTitle = prompt('Enter new session name:');
+        if (!newTitle) return;
+        
+        try {
+            const response = await fetch(`/sessions/${sessionId}/rename`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title: newTitle })
+            });
+            
+            const data = await response.json();
+            if (data.success) {
+                this.loadSessionsList();
+                if (this.currentSession && this.currentSession.id === sessionId) {
+                    this.currentSession = data.session;
+                    this.updateSessionUI();
+                }
+                this.showSuccess('Session renamed');
+            }
+        } catch (error) {
+            this.showError('Failed to rename session');
+        }
+    }
+    
+    updateSessionUI() {
+        if (this.currentSession) {
+            this.currentSessionInfo.style.display = 'block';
+            this.currentSessionName.textContent = this.currentSession.title;
+        } else {
+            this.currentSessionInfo.style.display = 'none';
+        }
+        feather.replace();
+    }
+    
+    showSuccess(message) {
+        // Simple success notification
+        const alert = document.createElement('div');
+        alert.className = 'alert alert-success alert-dismissible fade show position-fixed';
+        alert.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+        alert.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        document.body.appendChild(alert);
+        
+        setTimeout(() => {
+            if (alert.parentNode) alert.parentNode.removeChild(alert);
+        }, 3000);
+    }
 }
 
 // Initialize the application when DOM is loaded
