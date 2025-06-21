@@ -5,10 +5,14 @@ class InterviewAssistant {
         this.isListening = false;
         this.transcript = '';
         this.speechEnabled = true; // TTS toggle
+        this.currentSession = null;
+        this.sessions = [];
         
         this.initializeElements();
         this.initializeSpeechRecognition();
         this.bindEvents();
+        this.loadCurrentSession();
+        this.loadSessions();
     }
     
     initializeElements() {
@@ -28,6 +32,18 @@ class InterviewAssistant {
         
         // Input elements
         this.manualQuestionInput = document.getElementById('manual-question');
+        
+        // Session elements
+        this.sessionMenuBtn = document.getElementById('session-menu-btn');
+        this.sessionControls = document.getElementById('session-controls');
+        this.newSessionBtn = document.getElementById('new-session-btn');
+        this.saveSessionBtn = document.getElementById('save-session-btn');
+        this.loadSessionBtn = document.getElementById('load-session-btn');
+        this.currentSessionInfo = document.getElementById('current-session-info');
+        this.currentSessionName = document.getElementById('current-session-name');
+        this.sessionModal = document.getElementById('sessionModal');
+        this.sessionsList = document.getElementById('sessions-list');
+        this.modalNewSessionBtn = document.getElementById('modal-new-session-btn');
         
         // Sample question buttons
         this.sampleQuestionBtns = document.querySelectorAll('.sample-question');
@@ -165,6 +181,12 @@ class InterviewAssistant {
         if (this.speechToggleBtn) {
             this.speechToggleBtn.addEventListener('click', () => this.toggleSpeech());
         }
+        
+        // Session events
+        this.sessionMenuBtn.addEventListener('click', () => this.toggleSessionControls());
+        this.newSessionBtn.addEventListener('click', () => this.createNewSession());
+        this.loadSessionBtn.addEventListener('click', () => this.showSessionModal());
+        this.modalNewSessionBtn.addEventListener('click', () => this.createNewSessionFromModal());
         
         // Enter key in manual question input
         this.manualQuestionInput.addEventListener('keypress', (e) => {
